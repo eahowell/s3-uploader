@@ -10,7 +10,7 @@ const {
 const fs = require("fs");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
-const cors = require('cors');
+const cors = require("cors");
 
 const app = express();
 const port = 3000;
@@ -230,8 +230,8 @@ app.get("/api/objects/:key", async (req, res) => {
 });
 
 // Start the server
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Server running on http://0.0.0.0:\${port}`);
+app.listen(port, "0.0.0.0", () => {
+  console.log(`Server running on http://0.0.0.0:${port}`);
 });
 
 // const express = require("express");

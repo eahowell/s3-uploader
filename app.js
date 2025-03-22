@@ -10,6 +10,7 @@ const {
 const fs = require("fs");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
+const cors = require('cors');
 
 const app = express();
 const port = 3000;
@@ -21,6 +22,7 @@ if (!fs.existsSync(tempDir)) {
 }
 
 // Middleware setup
+app.use(cors());
 app.use(express.json()); // Parse JSON request bodies
 app.use(express.static(path.join(__dirname, "public"))); // Serve static files from 'public' directory
 

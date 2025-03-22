@@ -39,16 +39,16 @@ const s3Client = new S3Client({
   region: process.env.AWS_REGION || "us-east-1",
 
   // Add credentials (any values work for LocalStack)
-  credentials: {
-    accessKeyId: "test",
-    secretAccessKey: "test",
-  },
+  // credentials: {
+  //   accessKeyId: "test",
+  //   secretAccessKey: "test",
+  // },
 
   // The crucial part - endpoint to point to LocalStack instead of AWS
-  endpoint: "http://localhost:4566",
+  // endpoint: "http://localhost:4566",
 
   // Important for working with LocalStack
-  forcePathStyle: true,
+  // forcePathStyle: true,
 });
 
 // Set the S3 bucket name (from environment variable or default)

@@ -40,21 +40,12 @@ const s3Client = new S3Client({
   // Force region to match what we specified in the LocalStack startup
   region: process.env.AWS_REGION || "us-east-1",
 
-  // Add credentials (any values work for LocalStack)
-  // credentials: {
-  //   accessKeyId: "test",
-  //   secretAccessKey: "test",
-  // },
-
-  // The crucial part - endpoint to point to LocalStack instead of AWS
   // endpoint: "http://localhost:4566",
-
-  // Important for working with LocalStack
   // forcePathStyle: true,
 });
 
 // Set the S3 bucket name (from environment variable or default)
-const bucketName = process.env.S3_BUCKET_NAME || "cc-bucket-2-3";
+const bucketName = process.env.S3_BUCKET_NAME || "cc-image-resizer";
 
 // Helper function to clean up temporary files
 function cleanupTempFile(filePath) {
@@ -70,18 +61,21 @@ function cleanupTempFile(filePath) {
 // Endpoint 1: List all objects in a bucket
 app.get("/api/objects", async (req, res) => {
   try {
-    // Create a command to list objects in the bucket
-    const command = new ListObjectsV2Command({
-      Bucket: bucketName,
-    });
-
-    // Send the command to AWS S3
-    const response = await s3Client.send(command);
-
-    // Return the list of objects
+    const [origResp, resizedResp] = await Promise.all([
+      s3Client.send(new ListObjectsV2Command({
+        Bucket: bucketName,
+        Prefix: "original-images/"
+      })),
+      s3Client.send(new ListObjectsV2Command({
+        Bucket: bucketName,
+        Prefix: "resized-images/"
+      }))
+    ]);
+// Return the list of objects
     res.json({
       success: true,
-      objects: response.Contents || [],
+      originals: origResp.Contents || [],
+      resized: resizedResp.Contents || []
     });
   } catch (error) {
     console.error("Error listing objects:", error);
@@ -92,6 +86,7 @@ app.get("/api/objects", async (req, res) => {
     });
   }
 });
+
 
 // Endpoint 2: Upload an object to a bucket
 app.post("/api/objects", async (req, res) => {
@@ -234,136 +229,3 @@ app.listen(port, "0.0.0.0", () => {
   console.log(`Server running on http://0.0.0.0:${port}`);
 });
 
-// const express = require("express");
-// const fileUpload = require("express-fileupload");
-// const fs = require("fs");
-// const path = require("path");
-// const os = require("os");
-// const {
-//   S3Client,
-//   ListObjectsV2Command,
-//   PutObjectCommand,
-//   GetObjectCommand,
-// } = require("@aws-sdk/client-s3");
-// const { v4: uuidv4 } = require("uuid");
-
-// const app = express();
-// const port = 3000;
-
-// const s3Client = new S3Client({
-//   region: "us-east-1",
-//   endpoint: "http://localhost:4566",
-//   forcePathStyle: true,
-// });
-
-// const listObjectsParams = {
-//   Bucket: "cc-2-4-local-bucket",
-// };
-
-// const IMAGES_BUCKET = process.env.S3_BUCKET_NAME || "cc-2-4-local-bucket";
-
-// listObjectsCmd = new ListObjectsV2Command(listObjectsParams);
-
-// s3Client.send(listObjectsCmd);
-
-// const tempDir = path.join(__dirname, "temp");
-// if (!fs.existsSync(tempDir)) {
-//   fs.mkdirSync(tempDir, { recursive: true });
-// }
-// app.use(
-//   fileUpload({
-//     createParentPath: true,
-//     useTempFiles: true,
-//     tempFileDir: tempDir,
-//   })
-// );
-
-// // GET - List all objects in the bucket
-// app.get("/images", (req, res) => {
-//   try {
-//     listObjectsParams = {
-//       Bucket: IMAGES_BUCKET,
-//     };
-//     s3Client
-//       .send(new ListObjectsV2Command(listObjectsParams))
-//       .then((listObjectsResponse) => {
-//         res.status(200).send(listObjectsResponse);
-//       });
-//   } catch (error) {
-//     console.error("Error listing objects:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Failed to list objects",
-//       error: error.message,
-//     });
-//   }
-// });
-
-// // POST - Upload an object to the bucket
-// app.post("/images", (req, res) => {
-//   const file = req.files.image;
-//   const fileName = req.files.image.name;
-//   const tempPath = `${UPLOAD_TEMP_PATH}/${fileName}`;
-//   file.mv(tempPath, (err) => {
-//     res.status(500);
-//   });
-// });
-
-// // GET - Retrieve an object from bucket
-// app.get("/images/:key", async (req, res) => {
-//   const key = req.params.key;
-
-//   try {
-//     const command = new GetObjectCommand({
-//       Bucket: IMAGES_BUCKET,
-//       Key: key,
-//     });
-//     const response = await s3Client.send(command);
-//     const tempFilePath = path.join(
-//       tempDir,
-//       `${uuidv4()}-${path.basename(key)}`
-//     );
-
-//     // Create a write stream to save the object to disk
-//     const fileStream = fs.createWriteStream(tempFilePath);
-
-//     // Pipe the object data to the file
-//     await new Promise((resolve, reject) => {
-//       // Handle stream events
-//       response.Body.pipe(fileStream)
-//         .on("error", (err) => {
-//           console.error("Error writing to file stream:", err);
-//           reject(err);
-//         })
-//         .on("finish", () => {
-//           resolve();
-//         });
-//     });
-
-//     // Set appropriate headers for the response
-//     res.set({
-//       "Content-Type": response.ContentType,
-//       "Content-Length": response.ContentLength,
-//       "Content-Disposition": `attachment; filename="${path.basename(key)}"`,
-//     });
-
-//     // Create a read stream from the temporary file and pipe it to the response
-//     const readStream = fs.createReadStream(tempFilePath);
-//     readStream.pipe(res);
-//     readStream.on("end", () => {
-//       cleanupTempFile(tempFilePath);
-//     });
-//   } catch (error) {
-//     console.error("Error retrieving object:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Failed to retrieve object",
-//       error: error.message,
-//     });
-//   }
-// });
-
-// // Start the server
-// app.listen(port, () => {
-//   console.log(`Server running on http://localhost:${port}`);
-// });

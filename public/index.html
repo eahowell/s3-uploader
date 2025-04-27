@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>S3 Web Application</title>
+    <title>myFlix | Image Uploader</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -81,10 +81,10 @@
     </style>
 </head>
 <body>
-    <h1>AWS S3 Integration Web Application</h1>
+    <h1>Image Uploader</h1>
     
     <div class="section">
-        <h2>Upload Object to S3</h2>
+        <h2>Upload Image</h2>
         <form id="uploadForm">
             <div class="form-group">
                 <label for="file">Select File:</label>
@@ -96,7 +96,7 @@
     </div>
     
     <div class="section">
-        <h2>Objects in S3 Bucket</h2>
+        <h2>Uploaded Images</h2>
         <button id="refreshButton" class="button">Refresh List</button>
         <ul id="objectList" class="object-list">
             <li class="loading">Loading objects...</li>
@@ -139,16 +139,23 @@
                             return date.toLocaleString();
                         };
                         
-                        objectList.innerHTML = data.objects.map(object => `
-                            <li class="object-item">
-                                <div>
-                                    <strong>${object.Key}</strong><br>
-                                    <small>Size: ${formatSize(object.Size)}</small>
-                                    <small>Last Modified: ${formatDate(object.LastModified)}</small>
-                                </div>
-                                <button class="button" onclick="downloadObject('${object.Key}')">Download</button>
-                            </li>
-                        `).join('');
+                        objectList.innerHTML = data.originals.map(orig => {
+          const name = orig.Key.split('/').pop();
+          const resizedKey = `resized-images/${name}`;
+          const resizedObj = data.resized.find(r => r.Key === resizedKey) || {};
+          return `
+            <li class="object-item">
+              <div>
+                <strong>${name}</strong><br>
+                <small>Original: ${formatSize(orig.Size)}</small><br>
+                <small>Resized: ${resizedObj.Size ? formatSize(resizedObj.Size) : '–'}</small><br>
+                <small>Uploaded: ${formatDate(orig.LastModified)}</small>
+              </div>
+              <img src="${API_URL}/${encodeURIComponent(resizedKey)}" width="100" alt="${name} thumbnail">
+              <button class="button" onclick="downloadObject('${orig.Key}')">Open Original</button>
+              <button class="button" onclick="downloadObject('${resizedKey}')">Open Resized</button>
+            </li>`;
+        }).join('');
                     }
                 } else {
                     objectList.innerHTML = `<li class="error">Error: ${data.message}</li>`;

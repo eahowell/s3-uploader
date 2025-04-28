@@ -111,7 +111,7 @@ app.post("/api/objects", async (req, res) => {
     // Create a command to put the object in the bucket
     const command = new PutObjectCommand({
       Bucket: bucketName,
-      Key: fileKey,
+      Key: `original-images/${fileKey}`,
       Body: fileContent, // File content from disk
       ContentType: uploadedFile.mimetype, // Set the correct content type
     });

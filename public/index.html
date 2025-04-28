@@ -197,7 +197,6 @@
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     body: formData,
-                    // Don't set Content-Type header; browser will set it with boundary for FormData
                 });
                 
                 const data = await response.json();
